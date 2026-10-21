@@ -9,6 +9,7 @@ BACKUP_EEPROM_FILENAME = "ax88179.bin"
 
 ASIX_VID = 0x0B95
 AX_PID = 0x1790
+AX88179A_B_REVISION = 0x0200
 
 AX_ACCESS_MAC = 0x01
 AX_NODE_ID = 0x10
@@ -20,6 +21,17 @@ AX_ETH_ALEN = 6
 
 AX_EEPROM_SIZE_WORDS = 0x43
 AX_EEPROM_SIZE_BYTES = 0x86
+
+
+def check_device_support(in_dev):
+    if in_dev.bcdDevice == AX88179A_B_REVISION:
+        raise SystemExit(
+            "Unsupported device: AX88179A/AX88179B (bcdDevice=0x0200). "
+            "This utility only implements the original AX88179 EEPROM protocol. "
+            "Use ASIX's AX88179B/179A Flash/eFuse programmer instead; "
+            "eFuse programming is not a reversible EEPROM update. "
+            "No EEPROM has been read or written."
+        )
 
 
 def write_file(input_bytes: bytearray, filename):
@@ -70,6 +82,7 @@ if __name__ == "__main__":
     dev = usb.core.find(idVendor=ASIX_VID, idProduct=AX_PID)
     if dev is None:
         raise ValueError('Device not found. On Windows, remember to change the driver to libusb on Zadig')
+    check_device_support(dev)
     print("Found a matching AX88179 device")
     print("MAC:", bytes_to_hex(ax_read_node_id_check(dev)))
     write_file(ax_get_eeprom_kernel(dev), BACKUP_EEPROM_FILENAME)
